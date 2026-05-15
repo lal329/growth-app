@@ -57,19 +57,20 @@ function todayKey() { const d=new Date(); return `${d.getFullYear()}-${d.getMont
 // ── Shared UI ──────────────────────────────────────────────
 function getInp(C) { return { width:"100%", padding:"11px 14px", borderRadius:8, border:`1.5px solid ${C.border}`, background:C.card, color:C.ink, fontSize:14, fontWeight:400, outline:"none" }; }
 
-function Btn({ label, variant="fill", disabled, onClick, full }) {
+function Btn({ label, variant="fill", disabled, onClick, full, C: _C }) {
+  const T = _C || LIGHT;
   const getStyle = () => {
     const base = { padding:"11px 18px", borderRadius:8, fontSize:13, fontWeight:500, opacity:disabled?0.35:1, cursor:disabled?"not-allowed":"pointer", width:full?"100%":undefined };
-    if (variant==="fill")   return { ...base, background:C.ink,    color:C.card,  border:"none" };
-    if (variant==="ghost")  return { ...base, background:"transparent", color:C.mid, border:`1.5px solid ${C.border}` };
-    if (variant==="green")  return { ...base, background:C.green,  color:"#fff",  border:"none" };
+    if (variant==="fill")   return { ...base, background:T.ink,    color:T.card,  border:"none" };
+    if (variant==="ghost")  return { ...base, background:"transparent", color:T.mid, border:`1.5px solid ${T.border}` };
+    if (variant==="green")  return { ...base, background:T.green,  color:"#fff",  border:"none" };
     if (variant==="danger") return { ...base, background:"#fff0f0", color:"#cc3333", border:"1.5px solid #f5c0c0" };
     return base;
   };
   return <button disabled={disabled} onClick={onClick} style={getStyle()}>{label}</button>;
 }
 
-function Cap({ text }) { return <p style={{ fontSize:11, fontWeight:500, color:C.soft, marginBottom:8, letterSpacing:"0.04em" }}>{text}</p>; }
+function Cap({ text, C: _C }) { const T = _C||LIGHT; return <p style={{ fontSize:11, fontWeight:500, color:T.soft, marginBottom:8, letterSpacing:"0.04em" }}>{text}</p>; }
 
 // ── Lightbox ───────────────────────────────────────────────
 function Lightbox({ photos, startIndex, onClose }) {
@@ -257,8 +258,8 @@ function JournalCard({ entry, delay=0, onDelete, onEdit, C }) {
           <div style={{ background:"#fff0f0", border:"1.5px solid #f5c0c0", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
             <p style={{ fontSize:12, color:"#cc3333", marginBottom:8 }}>この記録を削除しますか？</p>
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
-              <Btn label="キャンセル" variant="ghost" onClick={() => setConfirm(false)} />
-              <Btn label="削除" variant="danger" onClick={() => onDelete(entry.id)} />
+              <Btn label="キャンセル" variant="ghost" onClick={() => setConfirm(false)} C={C} />
+              <Btn label="削除" variant="danger" onClick={() => onDelete(entry.id)} C={C} />
             </div>
           </div>
         )}
@@ -297,7 +298,7 @@ function EntryForm({ plant, entry, onSave, onBack, title, C }) {
       <div className="up" style={{ padding:"22px 16px 60px", display:"flex", flexDirection:"column", gap:20 }}>
         <div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-            <Cap text="写真" />
+            <Cap text="写真" C={C} />
             <span style={{ fontSize:11, color:C.soft }}>{photos.length} / {MAX}</span>
           </div>
           {adjustIdx !== null && photos[adjustIdx] && (
@@ -331,11 +332,11 @@ function EntryForm({ plant, entry, onSave, onBack, title, C }) {
           )}
         </div>
         <div>
-          <Cap text="今日の気持ち・気づき" />
+          <Cap text="今日の気持ち・気づき" C={C} />
           <textarea style={{ ...getInp(C), minHeight:120, resize:"vertical" }}
             placeholder="新しい葉が出てきた！少し乾燥気味だったかも…" value={memo} onChange={e => setMemo(e.target.value)} />
         </div>
-        <Btn label="保存する" disabled={!canSave} onClick={() => canSave && onSave({ photos, photoMeta, memo:memo.trim(), createdAt: entry?.createdAt || Date.now() })} full />
+        <Btn label="保存する" disabled={!canSave} onClick={() => canSave && onSave({ photos, photoMeta, memo:memo.trim(), createdAt: entry?.createdAt || Date.now() })} full C={C} />
       </div>
     </div>
   );
@@ -390,7 +391,7 @@ function PlantDetail({ plant, entries, onBack, onAddEntry, onDelete, onDeleteEnt
                 <p style={{ fontSize:13, fontWeight:600, color:"#7a5c20", marginBottom:6 }}>🍂 枯れてしまいましたか？</p>
                 <p style={{ fontSize:12, color:"#a08040", marginBottom:14, lineHeight:1.6 }}>記録はアーカイブとして残します。</p>
                 <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
-                  <Btn label="キャンセル" variant="ghost" onClick={() => setConfirmWither(false)} />
+                  <Btn label="キャンセル" variant="ghost" onClick={() => setConfirmWither(false)} C={C} />
                   <button onClick={() => { onArchive(plant.id); setConfirmWither(false); }} style={{ padding:"11px 18px", borderRadius:8, border:"none", background:"#c8a050", color:"#fff", fontSize:13, fontWeight:500, cursor:"pointer" }}>アーカイブする</button>
                 </div>
               </div>
@@ -409,13 +410,13 @@ function PlantDetail({ plant, entries, onBack, onAddEntry, onDelete, onDeleteEnt
             <div style={{ background:"#fff0f0", border:"1.5px solid #f5c0c0", borderRadius:10, padding:"14px 16px" }}>
               <p style={{ fontSize:13, color:"#cc3333", marginBottom:12 }}>「{plant.variety||plant.name}」を削除しますか？すべての記録も消えます。</p>
               <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
-                <Btn label="キャンセル" variant="ghost" onClick={() => setConfirmDelete(false)} />
-                <Btn label="削除する" variant="danger" onClick={onDelete} />
+                <Btn label="キャンセル" variant="ghost" onClick={() => setConfirmDelete(false)} C={C} />
+                <Btn label="削除する" variant="danger" onClick={onDelete} C={C} />
               </div>
             </div>
           ) : (
             <div style={{ display:"flex", justifyContent:"flex-end" }}>
-              <Btn label="記録を削除" variant="danger" onClick={() => setConfirmDelete(true)} />
+              <Btn label="記録を削除" variant="danger" onClick={() => setConfirmDelete(true)} C={C} />
             </div>
           )}
         </div>
@@ -440,10 +441,10 @@ function PlantForm({ plant, onSave, onBack, title, C }) {
         <h2 style={{ fontSize:18, fontWeight:700, color:C.ink, letterSpacing:"-0.02em" }}>{title}</h2>
       </div>
       <div className="up" style={{ padding:"22px 16px 60px", display:"flex", flexDirection:"column", gap:20 }}>
-        <div><Cap text="属名・種名" /><input style={fieldStyle} placeholder="例）モンステラ" value={name} onChange={e=>setName(e.target.value)} /></div>
-        <div><Cap text="品種名" /><input style={fieldStyle} placeholder="例）デリシオーサ（任意）" value={variety} onChange={e=>setVariety(e.target.value)} /></div>
+        <div><Cap text="属名・種名" C={C} /><input style={fieldStyle} placeholder="例）モンステラ" value={name} onChange={e=>setName(e.target.value)} /></div>
+        <div><Cap text="品種名" C={C} /><input style={fieldStyle} placeholder="例）デリシオーサ（任意）" value={variety} onChange={e=>setVariety(e.target.value)} /></div>
         <div>
-          <Cap text="水やり頻度" />
+          <Cap text="水やり頻度" C={C} />
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
             {[null,1,2,3,5,7,14].map(n => {
               const sel = waterDays===n;
@@ -452,9 +453,9 @@ function PlantForm({ plant, onSave, onBack, title, C }) {
           </div>
           <p style={{ fontSize:11, color:C.soft, marginTop:6 }}>※ デプロイ後にプッシュ通知として機能します</p>
         </div>
-        <div><Cap text="お迎え日（任意）" /><input type="date" style={fieldStyle} value={arrivalDate} onChange={e=>setArrivalDate(e.target.value)} /></div>
-        <div><Cap text="メモ（任意）" /><textarea style={{ ...fieldStyle, minHeight:72, resize:"vertical" }} placeholder="置き場所、品種など" value={notes} onChange={e=>setNotes(e.target.value)} /></div>
-        <Btn label="保存する" disabled={!name.trim()} onClick={() => onSave({ ...(plant||{}), name:name.trim(), variety:variety.trim(), waterDays, arrivalDate:arrivalDate||null, notes })} full />
+        <div><Cap text="お迎え日（任意）" C={C} /><input type="date" style={fieldStyle} value={arrivalDate} onChange={e=>setArrivalDate(e.target.value)} /></div>
+        <div><Cap text="メモ（任意）" C={C} /><textarea style={{ ...fieldStyle, minHeight:72, resize:"vertical" }} placeholder="置き場所、品種など" value={notes} onChange={e=>setNotes(e.target.value)} /></div>
+        <Btn label="保存する" disabled={!name.trim()} onClick={() => onSave({ ...(plant||{}), name:name.trim(), variety:variety.trim(), waterDays, arrivalDate:arrivalDate||null, notes })} full C={C} />
       </div>
     </div>
   );
@@ -546,7 +547,7 @@ function AlbumView({ plants, entries, onNav, onPlant, onAddPlant, dark, setDark,
             <div style={{ fontSize:48, marginBottom:14, opacity:0.25 }}>🌱</div>
             <p style={{ fontSize:14, color:C.soft, fontWeight:300, marginBottom:6 }}>あなたの植物記録アプリ</p>
             <p style={{ fontSize:11, color:C.soft, fontWeight:300, marginBottom:28, opacity:0.7 }}>植物を登録して育成を記録しましょう</p>
-            <Btn label="+ 最初の植物を追加" onClick={onAddPlant} />
+            <Btn label="+ 最初の植物を追加" onClick={onAddPlant} C={C} />
           </div>
         ) : (() => {
           const active   = plants.filter(p => !p.archived);
