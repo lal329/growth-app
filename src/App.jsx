@@ -426,7 +426,7 @@ function PlantDetail({ plant, entries, onBack, onAddEntry, onDelete, onDeleteEnt
 }
 
 // ── Plant Form (Add/Edit) ──────────────────────────────────
-function PlantForm({ plant, onSave, onBack, title, C }) {
+function PlantForm({ plant, onSave, onBack, title, C, onEnapi, showEnapiBtn }) {
   const [name,        setName]        = useState(plant?.name||"");
   const [variety,     setVariety]     = useState(plant?.variety||"");
   const [waterDays,   setWaterDays]   = useState(plant?.waterDays||null);
@@ -437,7 +437,15 @@ function PlantForm({ plant, onSave, onBack, title, C }) {
   return (
     <div style={{ minHeight:"100vh", background:C.bg }}>
       <div style={{ padding:"48px 20px 18px", background:C.card, borderBottom:`1px solid ${C.border}` }}>
-        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:13, fontWeight:500, color:C.green, padding:0, marginBottom:14, display:"block" }}>← Back</button>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+          <button onClick={onBack} style={{ background:"none", border:"none", fontSize:13, fontWeight:500, color:C.green, padding:0 }}>← Back</button>
+          {showEnapiBtn && (
+            <button onClick={onEnapi}
+              style={{ padding:"5px 12px", borderRadius:20, border:"1.5px solid #f0c0d5", background:"#fff5f8", color:"#c8648a", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+              🌸 えなぴ専用カード
+            </button>
+          )}
+        </div>
         <h2 style={{ fontSize:18, fontWeight:700, color:C.ink, letterSpacing:"-0.02em" }}>{title}</h2>
       </div>
       <div className="up" style={{ padding:"22px 16px 60px", display:"flex", flexDirection:"column", gap:20 }}>
@@ -461,8 +469,31 @@ function PlantForm({ plant, onSave, onBack, title, C }) {
   );
 }
 
+// ── Enapi Card ────────────────────────────────────────────
+function EnapiCard({ birthday, entries, onClick, C }) {
+  const diff  = Math.floor((Date.now() - new Date(birthday)) / 86400000);
+  const months = Math.floor(diff / 30);
+  const days   = diff % 30;
+  const ageLabel = months > 0 ? `${months}ヶ月${days}日` : `${diff}日`;
+  const count = entries.filter(e => e.plantId === "enapi").length;
+  return (
+    <div onClick={onClick} style={{ background:"#fff5f8", borderRadius:14, overflow:"hidden", border:"1.5px solid #f0c0d5", cursor:"pointer" }}>
+      <div style={{ aspectRatio:"1/1", background:"linear-gradient(135deg, #fce4ec, #f8bbd0)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+        <span style={{ fontSize:28 }}>🌸</span>
+        <p style={{ fontSize:11, fontWeight:700, color:"#c8648a" }}>えなぴ</p>
+        <p style={{ fontSize:9, color:"#885568" }}>{ageLabel}</p>
+      </div>
+      <div style={{ padding:"6px 8px 8px" }}>
+        <p style={{ fontSize:7, color:"#c8a0b0", textTransform:"uppercase", letterSpacing:"0.06em" }}>成長記録</p>
+        <p style={{ fontSize:12, fontWeight:700, color:"#3a1525", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>えなぴ</p>
+        <p style={{ fontSize:9, color:"#c8a0b0", marginTop:2 }}>{count > 0 ? `${count}件` : "記録なし"}</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Album View ─────────────────────────────────────────────
-function AlbumView({ plants, entries, onNav, onPlant, onAddPlant, dark, setDark, C }) {
+function AlbumView({ plants, entries, onNav, onPlant, onAddPlant, dark, setDark, C, onEnapi, enapiEntries, enapiConfig }) {
   const [sort, setSort]           = useState(() => localStorage.getItem("growth_sort")||"arrival_new");
   const [sortOpen, setSortOpen]   = useState(false);
   const [customOrder, setCustomOrder] = useState(() => { try { return JSON.parse(localStorage.getItem("growth_custom_order"))||null; } catch { return null; } });
@@ -542,21 +573,16 @@ function AlbumView({ plants, entries, onNav, onPlant, onAddPlant, dark, setDark,
       </div>
 
       <div style={{ padding:"20px 16px" }}>
-        {plants.length === 0 ? (
-          <div className="up" style={{ textAlign:"center", padding:"40px 16px" }}>
-            <div style={{ fontSize:48, marginBottom:14, opacity:0.25 }}>🌱</div>
-            <p style={{ fontSize:14, color:C.soft, fontWeight:300, marginBottom:6 }}>あなたの植物記録アプリ</p>
-            <p style={{ fontSize:11, color:C.soft, fontWeight:300, marginBottom:28, opacity:0.7 }}>植物を登録して育成を記録しましょう</p>
-            <Btn label="+ 最初の植物を追加" onClick={onAddPlant} C={C} />
-          </div>
-        ) : (() => {
+        {(() => {
           const active   = plants.filter(p => !p.archived);
           const archived = plants.filter(p =>  p.archived);
           return (
             <>
-              <button onClick={onAddPlant} style={{ width:"100%", padding:"11px", borderRadius:10, border:`1px solid ${C.border}`, background:"transparent", fontSize:12, fontWeight:500, color:C.mid, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginBottom:10 }}>
-                <span style={{ fontSize:16, lineHeight:1 }}>+</span> 植物を追加
-              </button>
+              {active.length > 0 && (
+                <button onClick={onAddPlant} style={{ width:"100%", padding:"11px", borderRadius:10, border:`1px solid ${C.border}`, background:"transparent", fontSize:12, fontWeight:500, color:C.mid, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginBottom:10 }}>
+                  <span style={{ fontSize:16, lineHeight:1 }}>+</span> 植物を追加
+                </button>
+              )}
 
               {sort==="custom" && (
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
@@ -569,6 +595,7 @@ function AlbumView({ plants, entries, onNav, onPlant, onAddPlant, dark, setDark,
               )}
 
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                {enapiConfig && <EnapiCard birthday={enapiConfig.birthday} entries={enapiEntries||[]} onClick={onEnapi} C={C} />}
                 {sortedPlants(active).map((p,i) => {
                   const pe = entries.filter(e=>e.plantId===p.id).sort((a,b)=>b.createdAt-a.createdAt);
                   const isSel = tapSelected===p.id;
@@ -610,6 +637,19 @@ function AlbumView({ plants, entries, onNav, onPlant, onAddPlant, dark, setDark,
                       );
                     })}
                   </div>
+                </div>
+              )}
+              {active.length === 0 && !enapiConfig && (
+                <div className="up" style={{ textAlign:"center", padding:"40px 16px", gridColumn:"1 / -1" }}>
+                  <div style={{ fontSize:48, marginBottom:14, opacity:0.25 }}>🌱</div>
+                  <p style={{ fontSize:14, color:C.soft, fontWeight:300, marginBottom:6 }}>あなたの植物記録アプリ</p>
+                  <p style={{ fontSize:11, color:C.soft, fontWeight:300, marginBottom:28, opacity:0.7 }}>植物を登録して育成を記録しましょう</p>
+                  <Btn label="+ 最初の植物を追加" onClick={onAddPlant} C={C} />
+                </div>
+              )}
+              {active.length === 0 && enapiConfig && (
+                <div className="up" style={{ textAlign:"center", padding:"20px 16px", gridColumn:"1 / -1" }}>
+                  <Btn label="+ 植物を追加" onClick={onAddPlant} C={C} />
                 </div>
               )}
             </>
@@ -737,6 +777,193 @@ function CalendarView({ plants, entries, onNav, onPlant, dark, setDark, C }) {
   );
 }
 
+// ── Enapi Register View ───────────────────────────────────
+function EnapiRegisterView({ onSave, onBack, C }) {
+  const [name,      setName]      = useState("");
+  const [birthday,  setBirthday]  = useState("");
+  const [waterHours, setFeedHours] = useState(null);
+  const [notes,     setNotes]     = useState("");
+  const pinkInp = { width:"100%", padding:"11px 14px", borderRadius:8, border:"1.5px solid #f0c0d5", background:"#fff", color:"#3a1525", fontSize:16, outline:"none", fontFamily:"Inter, sans-serif" };
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#fff5f8" }}>
+      <div style={{ padding:"48px 20px 20px", background:"#fff", borderBottom:"1.5px solid #f0c0d5" }}>
+        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:13, fontWeight:500, color:"#c8648a", padding:0, marginBottom:14, display:"block" }}>← Back</button>
+        <h2 style={{ fontSize:18, fontWeight:700, color:"#3a1525" }}>🌸 えなぴの記録を始める</h2>
+      </div>
+      <div className="up" style={{ padding:"24px 16px 60px", display:"flex", flexDirection:"column", gap:20 }}>
+        <div>
+          <p style={{ fontSize:11, fontWeight:500, color:"#c8a0b0", marginBottom:8 }}>名前</p>
+          <input value={name} onChange={e=>setName(e.target.value)} style={pinkInp} />
+        </div>
+        <div>
+          <p style={{ fontSize:11, fontWeight:500, color:"#c8a0b0", marginBottom:8 }}>お迎え日</p>
+          <input type="date" value={birthday} onChange={e=>setBirthday(e.target.value)} style={pinkInp} />
+        </div>
+        <div>
+          <p style={{ fontSize:11, fontWeight:500, color:"#c8a0b0", marginBottom:8 }}>水やり頻度</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {[null,1,2,3,4,6,8,10,12].map(n => {
+              const sel = waterHours===n;
+              return (
+                <button key={String(n)} onClick={() => setFeedHours(n)}
+                  style={{ flex:1, minWidth:"calc(25% - 8px)", padding:"9px 0", borderRadius:8, border:`1.5px solid ${sel?"#c8648a":"#f0c0d5"}`, background:sel?"#c8648a":"#fff", color:sel?"#fff":"#885568", fontSize:12, fontWeight:sel?600:400, cursor:"pointer" }}>
+                  {n===null ? "設定しない" : `${n}時間`}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div>
+          <p style={{ fontSize:11, fontWeight:500, color:"#c8a0b0", marginBottom:8 }}>メモ（任意）</p>
+          <textarea value={notes} onChange={e=>setNotes(e.target.value)}
+            style={{ ...pinkInp, minHeight:72, resize:"vertical" }} placeholder="気づいたことなど…" />
+        </div>
+        <button onClick={() => name.trim() && onSave({ name:name.trim(), birthday, waterHours, notes })}
+          disabled={!name.trim()}
+          style={{ width:"100%", padding:"12px", borderRadius:8, border:"none", background:"#c8648a", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", opacity:name.trim()?1:0.4 }}>
+          🌸 登録する
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Enapi Entry Card ──────────────────────────────────────
+function EnapiEntryCard({ entry, delay=0, onDelete }) {
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <div className="up" style={{ animationDelay:`${delay}ms`, background:"#fff", borderRadius:12, overflow:"hidden", border:"1px solid #f0c0d5", marginBottom:10 }}>
+      {entry.photos?.[0] && (
+        <div style={{ position:"relative" }}>
+          <img src={entry.photos[0]} alt="" style={{ width:"100%", maxHeight:220, objectFit:"cover", display:"block" }} />
+          {entry.photos.length > 1 && <div style={{ position:"absolute", bottom:8, right:10, background:"rgba(0,0,0,0.45)", borderRadius:12, padding:"2px 8px" }}><span style={{ color:"#fff", fontSize:11 }}>+{entry.photos.length-1}</span></div>}
+        </div>
+      )}
+      <div style={{ padding:"11px 14px" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:entry.memo?6:0 }}>
+          <p style={{ fontSize:11, color:"#c8a0b0" }}>{fmtDate(entry.createdAt)}</p>
+          {!confirm && (
+            <button onClick={() => setConfirm(true)} style={{ background:"none", border:"none", color:"#c8a0b0", fontSize:14, padding:"2px 4px", lineHeight:1, cursor:"pointer" }}>✕</button>
+          )}
+        </div>
+        {confirm && (
+          <div style={{ background:"#fff0f5", border:"1.5px solid #f0c0d5", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
+            <p style={{ fontSize:12, color:"#c8648a", marginBottom:8 }}>この記録を削除しますか？</p>
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+              <button onClick={() => setConfirm(false)} style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #f0c0d5", background:"transparent", fontSize:12, color:"#885568", cursor:"pointer" }}>キャンセル</button>
+              <button onClick={() => onDelete(entry.id)} style={{ padding:"8px 14px", borderRadius:8, border:"none", background:"#c8648a", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" }}>削除</button>
+            </div>
+          </div>
+        )}
+        {entry.memo && <p style={{ fontSize:14, color:"#3a1525", lineHeight:1.7 }}>{entry.memo}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ── Enapi Detail View ─────────────────────────────────────
+function EnapiDetailView({ entries, onBack, onAddEntry, onDeleteEntry, onDeleteCard, favorites, onAddFavorite, onDeleteFavorite, C }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [addingFav,     setAddingFav]     = useState(false);
+  const [favName,       setFavName]       = useState("");
+  const [favPhoto,      setFavPhoto]      = useState(null);
+  const FAV_COLORS = ["#fce4ec","#fff3e0","#fff9c4","#e8f5e9","#e3f2fd","#f3e5f5"];
+  const sorted = [...entries].sort((a,b) => b.createdAt - a.createdAt);
+  const groups = [];
+  sorted.forEach(e => { const k=fmtYM(e.createdAt); const g=groups.find(g=>g.key===k); if(g) g.items.push(e); else groups.push({key:k,label:fmtMonth(e.createdAt),items:[e]}); });
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#fff5f8", paddingBottom:60 }}>
+      <div style={{ padding:"48px 20px 20px", background:"#fff", borderBottom:"1.5px solid #f0c0d5" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+          <button onClick={onBack} style={{ background:"none", border:"none", fontSize:13, fontWeight:500, color:"#c8648a", padding:0 }}>← Back</button>
+          <button onClick={() => setConfirmDelete(true)} style={{ background:"none", border:"1px solid #f0c0d5", borderRadius:8, padding:"6px 12px", fontSize:11, color:"#c8a0b0", cursor:"pointer" }}>カードを削除</button>
+        </div>
+        {confirmDelete && (
+          <div style={{ background:"#fff0f5", border:"1.5px solid #f0c0d5", borderRadius:10, padding:"14px 16px", marginBottom:14 }}>
+            <p style={{ fontSize:13, color:"#c8648a", marginBottom:12 }}>えなぴのカードと全記録を削除しますか？</p>
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+              <button onClick={() => setConfirmDelete(false)} style={{ padding:"8px 14px", borderRadius:8, border:"1px solid #f0c0d5", background:"transparent", fontSize:12, color:"#885568", cursor:"pointer" }}>キャンセル</button>
+              <button onClick={onDeleteCard} style={{ padding:"8px 14px", borderRadius:8, border:"none", background:"#c8648a", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" }}>削除する</button>
+            </div>
+          </div>
+        )}
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <span style={{ fontSize:32 }}>🌸</span>
+          <div>
+            <p style={{ fontSize:10, color:"#c8a0b0", letterSpacing:"0.06em", textTransform:"uppercase" }}>成長記録</p>
+            <h2 style={{ fontSize:22, fontWeight:700, color:"#3a1525" }}>えなぴ</h2>
+          </div>
+        </div>
+      </div>
+      <div style={{ padding:"16px 16px" }}>
+        {/* お気に入りアルバム */}
+        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #f0c0d5", marginBottom:16, overflow:"hidden" }}>
+          <div style={{ padding:"12px 14px 10px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <p style={{ fontSize:13, fontWeight:700, color:"#3a1525" }}>🎀 えなぴのお気に入り</p>
+            <button onClick={() => setAddingFav(a=>!a)} style={{ background:"none", border:"1px solid #f0c0d5", borderRadius:20, padding:"4px 10px", fontSize:11, color:"#c8648a", cursor:"pointer" }}>+ 追加</button>
+          </div>
+          {addingFav && (
+            <div style={{ padding:"0 14px 12px", display:"flex", flexDirection:"column", gap:10 }}>
+              <div style={{ display:"flex", gap:8 }}>
+                {/* 写真 */}
+                <div style={{ position:"relative", width:64, height:64, borderRadius:8, border:"1.5px dashed #f0c0d5", background:"#fff5f8", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, overflow:"hidden" }}>
+                  {favPhoto
+                    ? <img src={favPhoto} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                    : <span style={{ fontSize:22, color:"#f0c0d5" }}>📷</span>}
+                  <input type="file" accept="image/*" onChange={e => { const f=e.target.files?.[0]; if(f){ const r=new FileReader(); r.onload=ev=>setFavPhoto(ev.target.result); r.readAsDataURL(f); } e.target.value=""; }}
+                    style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer" }} />
+                </div>
+                <div style={{ flex:1, display:"flex", flexDirection:"column", gap:8 }}>
+                  <input value={favName} onChange={e=>setFavName(e.target.value)} placeholder="名前を入力…"
+                    style={{ width:"100%", padding:"8px 12px", borderRadius:8, border:"1.5px solid #f0c0d5", background:"#fff5f8", color:"#3a1525", fontSize:14, outline:"none", fontFamily:"Inter,sans-serif" }} />
+                  <div style={{ display:"flex", gap:8 }}>
+                    <button onClick={() => { setAddingFav(false); setFavName(""); setFavPhoto(null); }} style={{ flex:1, padding:"8px", borderRadius:8, border:"1px solid #f0c0d5", background:"transparent", fontSize:12, color:"#885568", cursor:"pointer" }}>キャンセル</button>
+                    <button onClick={() => { if(favName.trim()){ onAddFavorite({id:Date.now(), name:favName.trim(), photo:favPhoto, color:FAV_COLORS[favorites.length%FAV_COLORS.length]}); setFavName(""); setFavPhoto(null); setAddingFav(false); } }}
+                      style={{ flex:1, padding:"8px", borderRadius:8, border:"none", background:"#c8648a", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" }}>OK</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {favorites.length === 0 && !addingFav ? (
+            <p style={{ fontSize:12, color:"#c8a0b0", textAlign:"center", padding:"16px 0 18px" }}>まだ登録がありません</p>
+          ) : (
+            <div style={{ display:"flex", gap:10, overflowX:"auto", padding:"0 12px 14px" }}>
+              {favorites.map(item => (
+                <div key={item.id} style={{ flexShrink:0, width:88, background:"#fff5f8", borderRadius:12, overflow:"hidden", border:"1px solid #f0c0d5", position:"relative" }}>
+                  <div style={{ width:88, height:88, background:item.color, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+                    {item.photo
+                      ? <img src={item.photo} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                      : <span style={{ fontSize:26 }}>🎀</span>}
+                  </div>
+                  <p style={{ fontSize:10, fontWeight:600, color:"#3a1525", padding:"5px 6px", textAlign:"center", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</p>
+                  <button onClick={() => onDeleteFavorite(item.id)} style={{ position:"absolute", top:4, right:4, background:"rgba(200,100,138,0.7)", border:"none", borderRadius:"50%", width:18, height:18, color:"#fff", fontSize:10, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button onClick={onAddEntry} style={{ width:"100%", padding:"11px", borderRadius:10, border:"1px solid #f0c0d5", background:"transparent", fontSize:12, fontWeight:500, color:"#c8648a", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginBottom:24 }}>
+          <span style={{ fontSize:16, lineHeight:1 }}>+</span> 今日の記録を追加
+        </button>
+        {sorted.length === 0
+          ? <p style={{ textAlign:"center", color:"#c8a0b0", padding:"40px 0", fontSize:14 }}>まだ記録がありません</p>
+          : groups.map(g => (
+            <div key={g.key} style={{ marginBottom:28 }}>
+              <p style={{ fontSize:11, fontWeight:500, color:"#c8a0b0", marginBottom:12, letterSpacing:"0.04em" }}>{g.label}</p>
+              {g.items.map((e,i) => (
+                <EnapiEntryCard key={e.id} entry={e} delay={i*35} onDelete={onDeleteEntry} />
+              ))}
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Root ───────────────────────────────────────────────────
 export default function App() {
   const [dark,    setDark]    = useState(() => localStorage.getItem("growth_dark")==="1");
@@ -789,6 +1016,46 @@ export default function App() {
   }
   function deleteEntry(id) { const e=entries.find(e=>e.id===id); e?.photos?.forEach((_,i)=>deletePhoto(`${e.id}_${i}`)); setEntries(es=>es.filter(e=>e.id!==id)); }
 
+  // Enapi
+  const ENAPI_BIRTHDAY = "2026-03-01";
+  const [enapiEntries,    setEnapiEntries]    = useState([]);
+  const [enapiRegistered, setEnapiRegistered] = useState(() => localStorage.getItem("growth_enapi")==="1");
+  const [enapiFavorites,  setEnapiFavorites]  = useState(() => { try { return JSON.parse(localStorage.getItem("growth_enapi_fav"))||[]; } catch { return []; } });
+
+  function addEnapiEntry({ photos, photoMeta, memo, createdAt }) {
+    const id = Date.now();
+    photos.forEach((p,i) => savePhoto(`enapi_${id}_${i}`, p));
+    setEnapiEntries(es => [...es, { id, plantId:"enapi", photos, photoMeta, memo, createdAt }]);
+    setView("enapi");
+  }
+
+  function deleteEnapiEntry(id) {
+    const e = enapiEntries.find(e => e.id===id);
+    e?.photos?.forEach((_,i) => deletePhoto(`enapi_${e.id}_${i}`));
+    setEnapiEntries(es => es.filter(e => e.id!==id));
+  }
+
+  function addEnapiFavorite(item) {
+    const next = [...enapiFavorites, item];
+    setEnapiFavorites(next);
+    localStorage.setItem("growth_enapi_fav", JSON.stringify(next));
+  }
+  function deleteEnapiFavorite(id) {
+    const next = enapiFavorites.filter(f => f.id !== id);
+    setEnapiFavorites(next);
+    localStorage.setItem("growth_enapi_fav", JSON.stringify(next));
+  }
+
+  function deleteEnapiCard() {
+    enapiEntries.forEach(e => e.photos?.forEach((_,i) => deletePhoto(`enapi_${e.id}_${i}`)));
+    setEnapiEntries([]);
+    setEnapiFavorites([]);
+    setEnapiRegistered(false);
+    localStorage.removeItem("growth_enapi");
+    localStorage.removeItem("growth_enapi_fav");
+    setView("album");
+  }
+
   function goPlant(id) { setPlantId(id); setView("plant"); }
   function goNav(key) { setView(key); }
 
@@ -796,11 +1063,14 @@ export default function App() {
 
   return (
     <div style={{ maxWidth:430, margin:"0 auto", minHeight:"100vh", background:C.bg, overflowX:"hidden" }}>
-      {view==="album"     && <AlbumView    plants={plants} entries={entries} onNav={goNav} onPlant={goPlant} onAddPlant={()=>setView("addPlant")} {...commonProps} />}
+      {view==="album"     && <AlbumView    plants={plants} entries={entries} onNav={goNav} onPlant={goPlant} onAddPlant={()=>setView("addPlant")} onEnapi={()=>setView("enapi")} enapiEntries={enapiEntries} enapiConfig={enapiRegistered ? { birthday:ENAPI_BIRTHDAY } : null} {...commonProps} />}
+      {view==="enapi"     && <EnapiDetailView entries={enapiEntries} onBack={()=>setView("album")} onAddEntry={()=>setView("addEnapiEntry")} onDeleteEntry={deleteEnapiEntry} onDeleteCard={deleteEnapiCard} favorites={enapiFavorites} onAddFavorite={addEnapiFavorite} onDeleteFavorite={deleteEnapiFavorite} C={C} />}
+      {view==="addEnapiEntry" && <EntryForm title="えなぴの記録" onSave={addEnapiEntry} onBack={()=>setView("enapi")} C={C} />}
       {view==="timeline"  && <TimelineView plants={plants} entries={entries} onNav={goNav} onPlant={goPlant} {...commonProps} />}
       {view==="calendar"  && <CalendarView plants={plants} entries={entries} onNav={goNav} onPlant={goPlant} {...commonProps} />}
       {view==="plant"     && plant && <PlantDetail plant={plant} entries={entries} onBack={()=>setView("album")} onAddEntry={()=>{setEntryFor(plant);setView("addEntry");}} onDelete={()=>deletePlant(plant.id)} onDeleteEntry={deleteEntry} onArchive={archivePlant} onEdit={()=>setView("editPlant")} onEditEntry={e=>{setEditingEntry(e);setView("editEntry");}} C={C} />}
-      {view==="addPlant"  && <PlantForm title="New Plant"  onSave={addPlant}    onBack={()=>setView("album")} C={C} />}
+      {view==="addPlant"  && <PlantForm title="New Plant"  onSave={addPlant}    onBack={()=>setView("album")} C={C} showEnapiBtn={!enapiRegistered} onEnapi={()=>setView("addEnapi")} />}
+      {view==="addEnapi"  && <EnapiRegisterView onSave={() => { setEnapiRegistered(true); localStorage.setItem("growth_enapi","1"); setView("album"); }} onBack={()=>setView("addPlant")} C={C} />}
       {view==="editPlant" && plant && <PlantForm title="編集" plant={plant} onSave={updatePlant} onBack={()=>setView("plant")} C={C} />}
       {view==="addEntry"  && entryFor    && <EntryForm title={`${entryFor.variety||entryFor.name} の記録`}    plant={entryFor}    onSave={addEntry}         onBack={()=>setView("plant")} C={C} />}
       {view==="editEntry" && editingEntry && plant && <EntryForm title="記録を編集" plant={plant} entry={editingEntry} onSave={saveEditedEntry} onBack={()=>{setView("plant");setEditingEntry(null);}} C={C} />}
